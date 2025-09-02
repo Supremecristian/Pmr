@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Totalizer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f7fa;
+      padding: 20px;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .fuel-section {
+      background: #fff;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .fuel-section h2 {
+      margin-top: 0;
+    }
+    label {
+      display: block;
+      margin: 8px 0 4px;
+    }
+    input {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+    .result {
+      margin-top: 10px;
+      font-weight: bold;
+      color: #006400;
+    }
+  </style>
+</head>
+<body>
+  <h1>Fuel Totalizer</h1>
+
+  <div id="fuels"></div>
+
+  <script>
+    const fuels = [
+      {key: "ado1", name: "Ado 1", defaultPrice: 57.80},
+      {key: "xtra", name: "Xtra", defaultPrice: 54.70},
+      {key: "xcs", name: "XCS", defaultPrice: 55.70},
+      {key: "ado2", name: "Ado 2", defaultPrice: 57.80}
+    ];
+
+    function loadData(key, def) {
+      return localStorage.getItem(key) || def;
+    }
+
+    function saveData(key, value) {
+      localStorage.setItem(key, value);
+    }
+
+    function render() {
+      const container = document.getElementById("fuels");
+      container.innerHTML = "";
+      fuels.forEach(fuel => {
+        const section = document.createElement("div");
+        section.className = "fuel-section";
+        section.innerHTML = `
+          <h2>${fuel.name}</h2>
+          <label>Price (₱ per liter)</label>
+          <input type="number" step="0.01" id="${fuel.key}-price" value="${loadData(fuel.key+'-price', fuel.defaultPrice)}">
+
+          <h3>Liters</h3>
+          <label>Beginning</label>
+          <input type="number" step="0.01" id="${fuel.key}-liters-begin" value="${loadData(fuel.key+'-liters-begin', '')}">
+          <label>Ending</label>
+          <input type="number" step="0.01" id="${fuel.key}-liters-end" value="${loadData(fuel.key+'-liters-end', '')}">
+          <div class="result" id="${fuel.key}-liters-result"></div>
+
+          <h3>Peso</h3>
+          <label>Beginning</label>
+          <input type="number" step="0.01" id="${fuel.key}-peso-begin" value="${loadData(fuel.key+'-peso-begin', '')}">
+          <label>Ending</label>
+          <input type="number" step="0.01" id="${fuel.key}-peso-end" value="${loadData(fuel.key+'-peso-end', '')}">
+          <div class="result" id="${fuel.key}-peso-result"></div>
+
+          <h3>Meter</h3>
+          <label>Beginning</label>
+          <input type="number" step="0.01" id="${fuel.key}-meter-begin" value="${loadData(fuel.key+'-meter-begin', '')}">
+          <label>Ending</label>
+          <input type="number" step="0.01" id="${fuel.key}-meter-end" value="${loadData(fuel.key+'-meter-end', '')}">
+          <div class="result" id="${fuel.key}-meter-result"></div>
+        `;
+        container.appendChild(section);
+
+        // add listeners
+        section.querySelectorAll("input").forEach(input => {
+          input.addEventListener("input", () => {
+            saveData(input.id, input.value);
+            calculate(fuel.key);
+          });
+        });
+        calculate(fuel.key);
+      });
+    }
+
+    function calculate(key) {
+      const price = parseFloat(document.getElementById(key+"-price").value) || 0;
+
+      // liters
+      const lb = parseFloat(document.getElementById(key+"-liters-begin").value) || 0;
+      const le = parseFloat(document.getElementById(key+"-liters-end").value) || 0;
+      const l = le - lb;
+      document.getElementById(key+"-liters-result").innerText = `Liters: ${l.toFixed(2)}, Amount: ₱${(l*price).toFixed(2)}`;
+
+      // peso
+      const pb = parseFloat(document.getElementById(key+"-peso-begin").value) || 0;
+      const pe = parseFloat(document.getElementById(key+"-peso-end").value) || 0;
+      const pa = pe - pb;
+      document.getElementById(key+"-peso-result").innerText = `Amount: ₱${pa.toFixed(2)}, Liters: ${(pa/price).toFixed(2)}`;
+
+      // meter
+      const mb = parseFloat(document.getElementById(key+"-meter-begin").value) || 0;
+      const me = parseFloat(document.getElementById(key+"-meter-end").value) || 0;
+      const ml = me - mb;
+      document.getElementById(key+"-meter-result").innerText = `Liters: ${ml.toFixed(2)}, Amount: ₱${(ml*price).toFixed(2)}`;
+    }
+
+    render();
+  </script>
+</body>
+</html>
