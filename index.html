@@ -1,188 +1,428 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Totalizer</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body { font-family: Arial, sans-serif; margin: 20px; padding-bottom: 60px; }
-    h2 { text-align: center; }
-    .form-group { margin-bottom: 10px; }
-    label { display: block; font-weight: bold; margin-bottom: 4px; }
-    input, select, button { width: 100%; padding: 8px; margin-bottom: 10px; font-size: 16px; }
-    button { background: #007bff; color: white; border: none; border-radius: 5px; }
-    button:hover { background: #0056b3; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
-    th, td { border: 1px solid #ccc; padding: 6px; text-align: center; }
-    th { background: #f2f2f2; }
-    .result { font-weight: bold; margin-top: 10px; }
-    .actions { display: flex; gap: 10px; }
-    .actions button { flex: 1; }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Fuel Totalizer — Mobile Friendly</title>
+<style>
+  :root{
+    --bg:#f3f4f6; --card:#ffffff; --accent:#0ea5e9; --muted:#6b7280; --good:#059669; --danger:#ef4444;
+    --border:#e6e6e9;
+  }
+  *{box-sizing:border-box;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial;}
+  body{margin:0;background:var(--bg);color:#0f172a;padding:14px}
+  .wrap{max-width:720px;margin:0 auto}
+  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  h1{font-size:18px;margin:0;color:var(--accent)}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:12px;box-shadow:0 6px 18px rgba(2,6,23,0.06)}
+  .tabs{display:flex;gap:8px;background:transparent;margin-bottom:8px}
+  .tab{flex:1;padding:10px;border-radius:10px;background:#fff;border:1px solid var(--border);text-align:center;font-weight:700;cursor:pointer}
+  .tab.active{background:linear-gradient(180deg,#ecfeff,#e0f7ff);border-color:var(--accent);color:var(--accent)}
+  label{display:block;font-size:13px;color:#334155;margin-top:8px;margin-bottom:6px}
+  select,input{width:100%;padding:12px;border-radius:10px;border:1px solid var(--border);font-size:16px;background:#fff}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .row.single{grid-template-columns:1fr}
+  .controls{display:flex;gap:8px;margin-top:12px}
+  .btn{flex:1;padding:12px;border-radius:10px;border:0;background:var(--accent);color:#042a2b;font-weight:800;cursor:pointer}
+  .btn.secondary{background:#fff;border:1px solid var(--border);color:#0f172a;font-weight:700}
+  .btn.danger{background:var(--danger);color:#fff}
+  .result{margin-top:12px;padding:10px;border-radius:10px;background:#f8fafc;border:1px dashed var(--border)}
+  .result .line{display:flex;justify-content:space-between;gap:8px;padding:6px 0}
+  table{width:100%;border-collapse:collapse;margin-top:10px}
+  th,td{padding:8px;border:1px solid var(--border);font-size:13px;text-align:center;background:#fff}
+  th{background:#f1f5f9;color:#475569}
+  .small{font-size:13px;color:var(--muted)}
+  @media (max-width:520px){
+    .row{grid-template-columns:1fr}
+    .tabs{flex-direction:row;overflow-x:auto;padding-bottom:6px}
+  }
+</style>
 </head>
 <body>
-  <h2>Totalizer Calculator</h2>
+  <div class="wrap">
+    <header>
+      <h1>Fuel Totalizer</h1>
+      <div class="small">Offline • Single file</div>
+    </header>
 
-  <div class="form-group">
-    <label for="date">Date:</label>
-    <input type="date" id="date">
+    <section class="card" aria-labelledby="calculator">
+      <div class="tabs" role="tablist">
+        <div class="tab active" data-tab="liters">Liters</div>
+        <div class="tab" data-tab="peso">Peso</div>
+        <div class="tab" data-tab="meter">Meter</div>
+      </div>
+
+      <div id="formArea">
+        <div id="tabContent">
+          <!-- content injected by JS -->
+        </div>
+      </div>
+
+      <div class="result" id="resultBox" aria-live="polite">
+        <div class="line"><div>Liters</div><div id="litersOut">0.00</div></div>
+        <div class="line"><div>Amount (₱)</div><div id="amountOut">0.00</div></div>
+      </div>
+
+      <div class="controls">
+        <button class="btn" id="calcBtn">Calculate</button>
+        <button class="btn secondary" id="saveInputsBtn">Save Inputs</button>
+        <button class="btn secondary" id="saveEntryBtn">Save to History</button>
+      </div>
+      <div style="margin-top:8px" class="small">Press <strong>Calculate</strong> to compute. Inputs (price, begin, end) auto-save as you type.</div>
+    </section>
+
+    <section class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h3 style="margin:0">History</h3>
+        <div style="display:flex;gap:8px">
+          <button class="btn secondary" id="exportCsvBtn">Export CSV</button>
+          <button class="btn danger" id="clearHistoryBtn">Clear History</button>
+        </div>
+      </div>
+
+      <div style="overflow:auto;margin-top:8px">
+        <table id="historyTable" aria-label="History table">
+          <thead><tr><th>Date</th><th>Fuel</th><th>Mode</th><th>Liters</th><th>Amount</th></tr></thead>
+          <tbody id="historyBody"></tbody>
+        </table>
+      </div>
+    </section>
   </div>
 
-  <div class="form-group">
-    <label for="mode">Mode:</label>
-    <select id="mode">
-      <option value="liters">Liters</option>
-      <option value="peso">Peso</option>
-      <option value="meter">Meter</option>
-    </select>
-  </div>
+<script>
+/* ========== Utilities ========== */
+const DEFAULT_PRICES = { ADO1:57.80, XTRA:54.70, XCS:55.70, ADO2:57.80 };
+const FUEL_LABEL = { ADO1:'ADO 1', ADO2:'ADO 2', XTRA:'Xtra', XCS:'XCS' };
+const LS_KEY = 'totalizer_v3';
 
-  <div class="form-group">
-    <label for="fuel">Fuel Type:</label>
-    <select id="fuel">
-      <option value="ado1">ADO 1</option>
-      <option value="ado2">ADO 2</option>
-      <option value="xtra">Xtra</option>
-      <option value="xcs">XCS</option>
-    </select>
-  </div>
+function todayYMD(){ const d=new Date(); const m=String(d.getMonth()+1).padStart(2,'0'); const day=String(d.getDate()).padStart(2,'0'); return `${d.getFullYear()}-${m}-${day}`; }
+function trunc2(v){ return Math.trunc(v*100)/100; } // truncate, not round
+function fmt2(v){ return (isFinite(v) ? (Math.trunc(v*100)/100).toFixed(2) : '0.00'); }
 
-  <div class="form-group">
-    <label for="price">Price per Liter:</label>
-    <input type="number" id="price" step="0.01">
-  </div>
+/* ========== State ========== */
+let store = JSON.parse(localStorage.getItem(LS_KEY) || 'null') || {
+  prices: {...DEFAULT_PRICES},
+  inputs: { // inputs[mode][fuel] = { begin, end, date }
+    liters:{}, peso:{}, meter:{}
+  },
+  history: []
+};
+// ensure prices keys exist
+store.prices = Object.assign({}, DEFAULT_PRICES, store.prices || {});
 
-  <div class="form-group">
-    <label for="beginning">Beginning:</label>
-    <input type="number" id="beginning" step="0.01">
-  </div>
+/* ========== DOM helpers ========== */
+const tabs = document.querySelectorAll('.tab');
+const tabContent = document.getElementById('tabContent');
+const litersOut = document.getElementById('litersOut');
+const amountOut = document.getElementById('amountOut');
+const calcBtn = document.getElementById('calcBtn');
+const saveInputsBtn = document.getElementById('saveInputsBtn');
+const saveEntryBtn = document.getElementById('saveEntryBtn');
+const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+const exportCsvBtn = document.getElementById('exportCsvBtn');
+const historyBody = document.getElementById('historyBody');
 
-  <div class="form-group">
-    <label for="ending">Ending:</label>
-    <input type="number" id="ending" step="0.01">
-  </div>
+let activeTab = 'liters'; // liters | peso | meter
+let currentFuel = 'ADO1'; // default selection
 
-  <div class="actions">
-    <button onclick="calculate()">Calculate</button>
-    <button onclick="clearHistory()">Clear History</button>
-  </div>
+/* ========== Build form UI per tab (single form common) ========== */
+function buildForm(){
+  tabContent.innerHTML = `
+    <div class="row single">
+      <div>
+        <label for="date">Date</label>
+        <input id="date" type="date" value="${todayYMD()}">
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label for="fuelSelect">Fuel Type</label>
+        <select id="fuelSelect" aria-label="Fuel type">
+          <option value="ADO1">ADO 1</option>
+          <option value="XTRA">Xtra</option>
+          <option value="XCS">XCS</option>
+          <option value="ADO2">ADO 2</option>
+        </select>
+      </div>
+      <div>
+        <label for="price">Price (₱ / L)</label>
+        <input id="price" type="number" step="0.01" inputmode="decimal" placeholder="e.g. 57.80">
+      </div>
+    </div>
 
-  <div class="result" id="result"></div>
+    <div class="row">
+      <div>
+        <label for="begin">Beginning</label>
+        <input id="begin" type="number" step="0.01" inputmode="decimal" placeholder="Beginning reading">
+      </div>
+      <div>
+        <label for="end">Ending</label>
+        <input id="end" type="number" step="0.01" inputmode="decimal" placeholder="Ending reading">
+      </div>
+    </div>
+  `;
 
-  <h3>History</h3>
-  <table id="historyTable">
-    <thead>
-      <tr>
-        <th>Date</th>
-        <th>Fuel</th>
-        <th>Mode</th>
-        <th>Liters</th>
-        <th>Amount</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+  // wire events
+  document.getElementById('fuelSelect').addEventListener('change', onFuelChange);
+  document.getElementById('price').addEventListener('input', onPriceInput);
+  document.getElementById('begin').addEventListener('input', onBeginEndInput);
+  document.getElementById('end').addEventListener('input', onBeginEndInput);
+  document.getElementById('date').addEventListener('change', onDateChange);
 
-  <script>
-    const defaultPrices = { ado1: 57.80, ado2: 57.80, xtra: 54.70, xcs: 55.70 };
-    let prices = JSON.parse(localStorage.getItem('prices')) || defaultPrices;
-    let savedInputs = JSON.parse(localStorage.getItem('savedInputs')) || {};
-    let history = JSON.parse(localStorage.getItem('history')) || [];
+  // set initial values
+  document.getElementById('fuelSelect').value = currentFuel;
+  loadInputsFor(activeTab, currentFuel);
+}
 
-    function truncate(num) {
-      return Math.floor(num * 100) / 100;
+/* ========== Event handlers ========== */
+function onTabClick(tab){
+  tabs.forEach(t=>t.classList.remove('active'));
+  tab.classList.add('active');
+  activeTab = tab.dataset.tab;
+  // remember current fuel selection (keep the same if switched)
+  const sel = document.getElementById('fuelSelect');
+  if(sel) { currentFuel = sel.value; }
+  buildForm();
+  renderResultClear();
+}
+
+tabs.forEach(t=> t.addEventListener('click', ()=> onTabClick(t)));
+
+/* When fuel changed: load its saved price and inputs */
+function onFuelChange(e){
+  const fuel = e.target.value;
+  currentFuel = fuel;
+  // load price (prices linked for ADO1 & ADO2)
+  const price = store.prices[fuel] !== undefined ? store.prices[fuel] : DEFAULT_PRICES[fuel];
+  document.getElementById('price').value = (price!==undefined?Number(price).toFixed(2):'');
+  loadInputsFor(activeTab, fuel);
+}
+
+/* Price input: sync ADO1<->ADO2 and auto-save */
+function onPriceInput(e){
+  const v = parseFloat(e.target.value);
+  if(isFinite(v)){
+    // if editing ADO1 or ADO2, sync both
+    if(currentFuel === 'ADO1' || currentFuel === 'ADO2'){
+      store.prices.ADO1 = v;
+      store.prices.ADO2 = v;
+    } else {
+      store.prices[currentFuel] = v;
     }
+    persistStore();
+  }
+}
 
-    function saveData() {
-      localStorage.setItem('prices', JSON.stringify(prices));
-      localStorage.setItem('savedInputs', JSON.stringify(savedInputs));
-      localStorage.setItem('history', JSON.stringify(history));
-    }
+/* Save begin/end as user types (auto-save) */
+function onBeginEndInput(){
+  const b = document.getElementById('begin').value;
+  const e = document.getElementById('end').value;
+  if(!store.inputs[activeTab]) store.inputs[activeTab] = {};
+  store.inputs[activeTab][currentFuel] = { begin: b, end: e, date: document.getElementById('date').value || todayYMD() };
+  persistStore();
+}
 
-    function loadInputs() {
-      const fuel = document.getElementById('fuel').value;
-      const mode = document.getElementById('mode').value;
+/* date changed */
+function onDateChange(){
+  // save date in inputs record
+  if(!store.inputs[activeTab]) store.inputs[activeTab] = {};
+  const rec = store.inputs[activeTab][currentFuel] || {};
+  rec.date = document.getElementById('date').value || todayYMD();
+  store.inputs[activeTab][currentFuel] = rec;
+  persistStore();
+}
 
-      document.getElementById('price').value = prices[fuel] || '';
+/* Calculate button */
+function calculate(){
+  // read fields
+  const date = document.getElementById('date').value || todayYMD();
+  const price = parseFloat(document.getElementById('price').value) || 0;
+  const b = parseFloat(document.getElementById('begin').value) || 0;
+  const e = parseFloat(document.getElementById('end').value) || 0;
+  const mode = activeTab; // liters | peso | meter
+  const fuel = currentFuel;
 
-      if (savedInputs[fuel] && savedInputs[fuel][mode]) {
-        document.getElementById('beginning').value = savedInputs[fuel][mode].beginning || '';
-        document.getElementById('ending').value = savedInputs[fuel][mode].ending || '';
-      } else {
-        document.getElementById('beginning').value = '';
-        document.getElementById('ending').value = '';
-      }
-    }
+  // validation
+  if(!date){ alert('Please select a date'); return; }
+  if(!isFinite(price)){ alert('Please enter a valid price'); return; }
+  if(isNaN(b) || isNaN(e)){ alert('Please enter beginning and ending readings'); return; }
 
-    function calculate() {
-      const date = document.getElementById('date').value || new Date().toISOString().split('T')[0];
-      const mode = document.getElementById('mode').value;
-      const fuel = document.getElementById('fuel').value;
-      let price = parseFloat(document.getElementById('price').value) || 0;
-      const beginning = parseFloat(document.getElementById('beginning').value) || 0;
-      const ending = parseFloat(document.getElementById('ending').value) || 0;
+  // update prices (and sync ado1/ado2)
+  if(fuel === 'ADO1' || fuel === 'ADO2'){
+    store.prices.ADO1 = price;
+    store.prices.ADO2 = price;
+  } else {
+    store.prices[fuel] = price;
+  }
 
-      // Update prices + sync ado1 and ado2
-      if (fuel === 'ado1' || fuel === 'ado2') {
-        prices['ado1'] = price;
-        prices['ado2'] = price;
-      } else {
-        prices[fuel] = price;
-      }
+  // perform calculation per mode
+  let liters = 0, amount = 0;
+  if(mode === 'peso'){
+    amount = trunc2(e - b);
+    liters = price > 0 ? trunc2(amount / price) : 0;
+  } else { // liters or meter
+    liters = trunc2(e - b);
+    amount = trunc2(liters * price);
+  }
 
-      let liters = 0, amount = 0;
+  // save inputs separately per mode+fuel (auto-save)
+  if(!store.inputs[mode]) store.inputs[mode] = {};
+  store.inputs[mode][fuel] = { begin: String(b), end: String(e), date };
 
-      if (mode === 'liters' || mode === 'meter') {
-        liters = truncate(ending - beginning);
-        amount = truncate(liters * price);
-      } else if (mode === 'peso') {
-        amount = truncate(ending - beginning);
-        liters = price > 0 ? truncate(amount / price) : 0;
-      }
+  // save history entry (store truncated values)
+  store.history.push({ date, fuel, mode, liters, amount });
+  persistStore();
 
-      // Save inputs separately by mode
-      if (!savedInputs[fuel]) savedInputs[fuel] = {};
-      savedInputs[fuel][mode] = { beginning, ending };
+  // show results
+  litersOut.textContent = fmt2(liters);
+  amountOut.textContent = fmt2(amount);
 
-      // Record history
-      history.push({ date, fuel, mode, liters, amount });
-      saveData();
+  // mark last calculated signature so Save to History button isn't needed (we still keep it)
+  lastCalcSig = JSON.stringify({date,fuel,mode,liters,amount});
+  alert('Calculated — results shown. Use "Save to History" to keep a separate record if needed.');
+}
 
-      document.getElementById('result').textContent = 
-        `Liters: ${liters} | Amount: ₱${amount}`;
-      renderHistory();
-    }
+/* Save Inputs button: explicitly save current inputs (though autosave already does) */
+function saveInputs(){
+  const date = document.getElementById('date').value || todayYMD();
+  const b = document.getElementById('begin').value || '';
+  const e = document.getElementById('end').value || '';
+  if(!store.inputs[activeTab]) store.inputs[activeTab] = {};
+  store.inputs[activeTab][currentFuel] = { begin: String(b), end: String(e), date };
+  // also ensure price stored
+  const p = parseFloat(document.getElementById('price').value);
+  if(isFinite(p)){
+    if(currentFuel==='ADO1' || currentFuel==='ADO2'){ store.prices.ADO1 = p; store.prices.ADO2 = p; }
+    else store.prices[currentFuel] = p;
+  }
+  persistStore();
+  alert('Inputs saved for ' + FUEL_LABEL[currentFuel] + ' (' + activeTab + ')');
+}
 
-    function renderHistory() {
-      const tbody = document.querySelector('#historyTable tbody');
-      tbody.innerHTML = '';
-      history.forEach(entry => {
-        const row = `<tr>
-          <td>${entry.date}</td>
-          <td>${entry.fuel.toUpperCase()}</td>
-          <td>${entry.mode}</td>
-          <td>${entry.liters}</td>
-          <td>₱${entry.amount}</td>
-        </tr>`;
-        tbody.innerHTML += row;
-      });
-    }
+/* Save to history explicitly (allows user to keep record after calculate) */
+let lastCalcSig = null;
+function saveEntryToHistory(){
+  // must calculate first to have results match inputs
+  if(!lastCalcSig){
+    alert('Please press Calculate first to compute results before saving an entry.');
+    return;
+  }
+  // parse last signature to entry
+  const sig = JSON.parse(lastCalcSig);
+  store.history.push(sig);
+  persistStore();
+  renderHistory();
+  alert('Entry saved to history.');
+}
 
-    function clearHistory() {
-      if (confirm('Clear all history?')) {
-        history = [];
-        saveData();
-        renderHistory();
-      }
-    }
+/* persist to localStorage */
+function persistStore(){
+  localStorage.setItem(LS_KEY, JSON.stringify(store));
+  renderHistory();
+}
 
-    document.getElementById('fuel').addEventListener('change', loadInputs);
-    document.getElementById('mode').addEventListener('change', loadInputs);
+/* render history table */
+function renderHistory(){
+  historyBody.innerHTML = '';
+  store.history.forEach(row => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${row.date}</td><td>${FUEL_LABEL[row.fuel]||row.fuel}</td><td>${row.mode}</td><td>${fmt2(row.liters)}</td><td>${fmt2(row.amount)}</td>`;
+    historyBody.appendChild(tr);
+  });
+}
 
-    window.onload = () => {
-      renderHistory();
-      loadInputs();
-    };
-  </script>
+/* clear history */
+function clearHistory(){
+  if(!confirm('Clear all history?')) return;
+  store.history = [];
+  persistStore();
+}
+
+/* export CSV */
+function exportCSV(){
+  if(!store.history.length){ alert('No history to export'); return; }
+  const rows = [['Date','Fuel','Mode','Liters','Amount']];
+  store.history.forEach(r=> rows.push([r.date, FUEL_LABEL[r.fuel]||r.fuel, r.mode, fmt2(r.liters), fmt2(r.amount)]));
+  const csv = rows.map(r=> r.map(c=> `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv],{type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'totalizer_history.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* load inputs for selected mode+fuel */
+function loadInputsFor(mode, fuel){
+  // set fuel select value if present
+  const sel = document.getElementById('fuelSelect');
+  if(sel) sel.value = fuel;
+  // price
+  const p = store.prices[fuel] !== undefined ? store.prices[fuel] : DEFAULT_PRICES[fuel];
+  const priceEl = document.getElementById('price');
+  if(priceEl) priceEl.value = (p !== undefined ? Number(p).toFixed(2) : '');
+  // inputs per mode
+  const rec = (store.inputs[mode] && store.inputs[mode][fuel]) ? store.inputs[mode][fuel] : null;
+  const beginEl = document.getElementById('begin');
+  const endEl = document.getElementById('end');
+  const dateEl = document.getElementById('date');
+  if(rec){
+    if(beginEl) beginEl.value = rec.begin;
+    if(endEl) endEl.value = rec.end;
+    if(dateEl) dateEl.value = rec.date || todayYMD();
+  } else {
+    if(beginEl) beginEl.value = '';
+    if(endEl) endEl.value = '';
+    if(dateEl) dateEl.value = todayYMD();
+  }
+  // reset result display
+  litersOut.textContent = '0.00';
+  amountOut.textContent = '0.00';
+  lastCalcSig = null;
+  lastCalcSig = null;
+}
+
+/* initialize UI */
+function init(){
+  buildForm();
+  renderHistory();
+  // wire remaining buttons
+  calcBtn.addEventListener('click', calculate);
+  saveInputsBtn.addEventListener('click', saveInputs);
+  saveEntryBtn.addEventListener('click', saveEntryToHistory);
+  clearHistoryBtn.addEventListener('click', clearHistory);
+  exportCsvBtn.addEventListener('click', exportCSV);
+  // set initial fuel from store if present
+  const initialFuel = Object.keys(store.prices)[0] || 'ADO1';
+  currentFuel = initialFuel;
+  // ensure ADO1/ADO2 prices are same if previously set
+  if(store.prices.ADO1 && !store.prices.ADO2) store.prices.ADO2 = store.prices.ADO1;
+  if(store.prices.ADO2 && !store.prices.ADO1) store.prices.ADO1 = store.prices.ADO2;
+  persistStore();
+  loadInputsFor(activeTab, currentFuel);
+}
+
+/* listen to fuelSelect changes created dynamically */
+document.addEventListener('change', function(e){
+  if(e.target && e.target.id === 'fuelSelect'){
+    currentFuel = e.target.value;
+    loadInputsFor(activeTab, currentFuel);
+    // update price field with synced value
+    const p = store.prices[currentFuel] !== undefined ? store.prices[currentFuel] : DEFAULT_PRICES[currentFuel];
+    document.getElementById('price').value = (p!==undefined?Number(p).toFixed(2):'');
+  }
+});
+
+// tab clicks handled earlier; attach click to dynamically created tabs
+document.addEventListener('click', function(e){
+  if(e.target && e.target.classList.contains('tab')){
+    onTabClick(e.target);
+  }
+});
+
+// run init
+init();
+</script>
 </body>
 </html>
