@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Totalizer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f9f9f9;
+      color: #333;
+    }
+    .container {
+      max-width: 600px;
+      margin: 20px auto;
+      padding: 15px;
+    }
+    h1 {
+      text-align: center;
+      font-size: 1.6rem;
+      margin-bottom: 20px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .card h2 {
+      font-size: 1.2rem;
+      margin-bottom: 10px;
+      color: #444;
+    }
+    label {
+      display: block;
+      font-weight: bold;
+      margin-top: 10px;
+      margin-bottom: 5px;
+    }
+    input {
+      width: 100%;
+      padding: 12px;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      box-sizing: border-box;
+    }
+    button {
+      width: 100%;
+      background: #007bff;
+      color: white;
+      padding: 14px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    .result {
+      margin-top: 10px;
+      padding: 12px;
+      background: #f1f1f1;
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Fuel Totalizer</h1>
+
+    <div class="card" id="fuelForm">
+      <h2>Fuel Input</h2>
+
+      <label for="fuelType">Fuel Type</label>
+      <select id="fuelType">
+        <option value="ado1">Ado 1</option>
+        <option value="xtra">Xtra</option>
+        <option value="xcs">XCS</option>
+        <option value="ado2">Ado 2</option>
+      </select>
+
+      <label for="price">Price (₱)</label>
+      <input type="number" id="price" step="0.01" placeholder="Enter price">
+
+      <label for="beginning">Beginning Reading</label>
+      <input type="number" id="beginning" step="0.01" placeholder="Enter beginning">
+
+      <label for="ending">Ending Reading</label>
+      <input type="number" id="ending" step="0.01" placeholder="Enter ending">
+
+      <button onclick="calculate()">Calculate</button>
+
+      <div class="result" id="result">Result will appear here...</div>
+    </div>
+  </div>
+
+  <script>
+    // Load saved data on page load
+    window.onload = function() {
+      const savedFuel = localStorage.getItem('fuelType');
+      const savedPrice = localStorage.getItem('price');
+      const savedBeginning = localStorage.getItem('beginning');
+      if (savedFuel) document.getElementById('fuelType').value = savedFuel;
+      if (savedPrice) document.getElementById('price').value = savedPrice;
+      if (savedBeginning) document.getElementById('beginning').value = savedBeginning;
+    }
+
+    function calculate() {
+      const fuelType = document.getElementById('fuelType').value;
+      const price = parseFloat(document.getElementById('price').value) || 0;
+      const beginning = parseFloat(document.getElementById('beginning').value) || 0;
+      const ending = parseFloat(document.getElementById('ending').value) || 0;
+
+      // Save data
+      localStorage.setItem('fuelType', fuelType);
+      localStorage.setItem('price', price);
+      localStorage.setItem('beginning', beginning);
+
+      let liters = 0, amount = 0;
+      if (ending > beginning) {
+        liters = ending - beginning;
+        amount = liters * price;
+      }
+
+      document.getElementById('result').innerHTML = `
+        <strong>Liters:</strong> ${liters.toFixed(2)} L<br>
+        <strong>Amount:</strong> ₱${amount.toFixed(2)}
+      `;
+    }
+  </script>
+</body>
+</html>
