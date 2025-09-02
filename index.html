@@ -169,7 +169,8 @@
   }
 
   // Calculation logic
-  function recalc(){
+  
+function recalc(){
     const fuel = fuelSel.value;
     const mode = modeSel.value;
     const price = parseFloat(priceInp.value) || 0;
@@ -181,15 +182,22 @@
     if(mode === 'PESO'){
       amount = e - b;
       liters = price ? (amount / price) : 0;
-    }else{ // LITERS or METER
+    } else {
       liters = e - b;
       amount = liters * price;
     }
 
-    litersVal.textContent = (isFinite(liters)?liters:0).toFixed(2);
-    amountVal.textContent = (isFinite(amount)?amount:0).toFixed(2);
-  }
+    // Function to truncate a number to a specified number of decimal places
+    const truncate = (num, digits) => {
+        const factor = Math.pow(10, digits);
+        return Math.floor(num * factor) / factor;
+    };
 
+    litersVal.textContent = truncate(liters, 2).toFixed(2);
+    amountVal.textContent = truncate(amount, 2).toFixed(2);
+
+    lastCalcSignature = JSON.stringify({ fuel, mode, price: Number(price).toFixed(2), begin: Number(b).toFixed(2), end: Number(e).toFixed(2), date: dateInp.value });
+}
   // History
   function renderHistory(){
     const hist = LS.get('history', []);
