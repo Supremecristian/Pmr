@@ -95,7 +95,7 @@ const FUEL_LABEL = { ADO1:'ADO 1', ADO2:'ADO 2', XTRA:'Xtra', XCS:'XCS' };
 const LS_KEY = 'totalizer_v3';
 
 function todayYMD(){ const d=new Date(); const m=String(d.getMonth()+1).padStart(2,'0'); const day=String(d.getDate()).padStart(2,'0'); return `${d.getFullYear()}-${m}-${day}`; }
-function trunc2(v){ return Math.trunc(v*100)/100; } // truncate, not round
+function trunc2(v){ return Math.trunc(v*1000)/1000; } // truncate, not round
 function fmt2(v){ return (isFinite(v) ? (Math.trunc(v*100)/100).toFixed(2) : '0.00'); }
 
 /* ========== State ========== */
