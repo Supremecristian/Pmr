@@ -5,22 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Totalizer Calculator</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; background:#f9f9f9; }
-    h2 { text-align: center; }
-    .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-    label { display: block; margin-top: 10px; font-weight: bold; }
-    input, select, button { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
-    button { background: #007bff; color: white; border: none; margin-top: 15px; }
+    body { font-family: Arial, sans-serif; margin: 0; padding: 15px; background:#f2f2f2; }
+    h2 { text-align: center; margin-bottom: 15px; }
+    .container { max-width: 450px; margin: auto; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
+    label { display: block; margin-top: 10px; font-weight: bold; font-size: 14px; }
+    input, select, button { width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
+    button { background: #007bff; color: white; border: none; margin-top: 12px; }
     button:hover { background: #0056b3; cursor: pointer; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; font-size: 14px; }
-    th { background: #007bff; color: white; }
+    .small-btn { background: #28a745; font-size: 14px; padding: 8px; margin-top: 8px; }
+    .small-btn:hover { background: #1e7e34; }
     .clear-btn { background: red; margin-top: 10px; }
+    .result-box { margin-top: 15px; padding: 12px; background: #f9f9f9; border: 1px solid #ccc; border-radius: 5px; text-align: center; font-size: 16px; font-weight: bold; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    th { background: #007bff; color: white; }
   </style>
 </head>
 <body>
   <div class="container">
-    <h2>Totalizer Calculator</h2>
+    <h2>Totalizer</h2>
 
     <label for="mode">Mode</label>
     <select id="mode">
@@ -46,19 +49,15 @@
     <label for="end">Ending</label>
     <input type="number" id="end" step="0.01">
 
-    <label for="date">Date</label>
-    <input type="date" id="date">
-
+    <button class="small-btn" onclick="copyLastEnding()">Copy Last Ending → Beginning</button>
     <button onclick="calculate()">Calculate</button>
 
-    <h3>Result</h3>
-    <p id="result"></p>
+    <div class="result-box" id="result">Result will appear here</div>
 
     <h3>History</h3>
     <table id="historyTable">
       <thead>
         <tr>
-          <th>Date</th>
           <th>Fuel</th>
           <th>Mode</th>
           <th>Liters</th>
@@ -81,7 +80,6 @@
       localStorage.setItem("totalizerData", JSON.stringify(data));
     }
 
-    // Round to 2 decimals
     function round2(v) {
       return Math.round(v * 100) / 100;
     }
@@ -92,9 +90,8 @@
       let price = parseFloat(document.getElementById("price").value);
       let begin = parseFloat(document.getElementById("begin").value);
       let end = parseFloat(document.getElementById("end").value);
-      let date = document.getElementById("date").value;
 
-      if (isNaN(begin) || isNaN(end) || isNaN(price) || !date) {
+      if (isNaN(begin) || isNaN(end) || isNaN(price)) {
         alert("Please fill all fields");
         return;
       }
@@ -127,10 +124,21 @@
       data.inputs[fuel][mode] = { begin, end };
 
       // Save history
-      data.history.push({ date, fuel, mode, liters, amount });
-
+      data.history.push({ fuel, mode, liters, amount, end });
       saveData(data);
       loadUI();
+    }
+
+    function copyLastEnding() {
+      let mode = document.getElementById("mode").value;
+      let fuel = document.getElementById("fuel").value;
+      let data = loadData();
+
+      if (data.inputs[fuel] && data.inputs[fuel][mode]) {
+        document.getElementById("begin").value = data.inputs[fuel][mode].end;
+      } else {
+        alert("No previous ending found for this mode and fuel.");
+      }
     }
 
     function loadUI() {
@@ -153,7 +161,7 @@
       tbody.innerHTML = "";
       data.history.forEach(row => {
         let tr = document.createElement("tr");
-        tr.innerHTML = `<td>${row.date}</td><td>${row.fuel}</td><td>${row.mode}</td><td>${row.liters.toFixed(2)}</td><td>₱${row.amount.toFixed(2)}</td>`;
+        tr.innerHTML = `<td>${row.fuel}</td><td>${row.mode}</td><td>${row.liters.toFixed(2)}</td><td>₱${row.amount.toFixed(2)}</td>`;
         tbody.appendChild(tr);
       });
     }
@@ -165,10 +173,7 @@
       loadUI();
     }
 
-    // Auto-fill today's date
     window.onload = () => {
-      let today = new Date().toISOString().split("T")[0];
-      document.getElementById("date").value = today;
       loadUI();
     };
 
