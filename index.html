@@ -12,8 +12,6 @@
     input, select, button { width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
     button { background: #007bff; color: white; border: none; margin-top: 12px; }
     button:hover { background: #0056b3; cursor: pointer; }
-    .small-btn { background: #28a745; font-size: 14px; padding: 8px; margin-top: 8px; }
-    .small-btn:hover { background: #1e7e34; }
     .clear-btn { background: red; margin-top: 10px; }
     .result-box { margin-top: 15px; padding: 12px; background: #f9f9f9; border: 1px solid #ccc; border-radius: 5px; text-align: center; font-size: 16px; font-weight: bold; }
     table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
@@ -49,7 +47,6 @@
     <label for="end">Ending</label>
     <input type="number" id="end" step="0.01">
 
-    <button class="small-btn" onclick="copyLastEnding()">Copy Last Ending → Beginning</button>
     <button onclick="calculate()">Calculate</button>
 
     <div class="result-box" id="result">Result will appear here</div>
@@ -81,7 +78,7 @@
     }
 
     function round2(v) {
-      return Math.round(v * 100) / 100;
+      return Math.floor(v * 100) / 100; // always 2 decimals, truncate
     }
 
     function calculate() {
@@ -124,21 +121,9 @@
       data.inputs[fuel][mode] = { begin, end };
 
       // Save history
-      data.history.push({ fuel, mode, liters, amount, end });
+      data.history.push({ fuel, mode, liters, amount });
       saveData(data);
       loadUI();
-    }
-
-    function copyLastEnding() {
-      let mode = document.getElementById("mode").value;
-      let fuel = document.getElementById("fuel").value;
-      let data = loadData();
-
-      if (data.inputs[fuel] && data.inputs[fuel][mode]) {
-        document.getElementById("begin").value = data.inputs[fuel][mode].end;
-      } else {
-        alert("No previous ending found for this mode and fuel.");
-      }
     }
 
     function loadUI() {
@@ -173,10 +158,32 @@
       loadUI();
     }
 
-    window.onload = () => {
-      loadUI();
-    };
+    // Auto-save whenever user changes price, begin, or end
+    ["price","begin","end"].forEach(id => {
+      document.getElementById(id).addEventListener("input", () => {
+        let fuel = document.getElementById("fuel").value;
+        let mode = document.getElementById("mode").value;
+        let data = loadData();
 
+        let price = parseFloat(document.getElementById("price").value) || data.prices[fuel];
+        let begin = parseFloat(document.getElementById("begin").value) || "";
+        let end = parseFloat(document.getElementById("end").value) || "";
+
+        if (fuel === "ado1" || fuel === "ado2") {
+          data.prices.ado1 = price;
+          data.prices.ado2 = price;
+        } else {
+          data.prices[fuel] = price;
+        }
+
+        if (!data.inputs[fuel]) data.inputs[fuel] = {};
+        data.inputs[fuel][mode] = { begin, end };
+
+        saveData(data);
+      });
+    });
+
+    window.onload = () => { loadUI(); };
     document.getElementById("fuel").addEventListener("change", loadUI);
     document.getElementById("mode").addEventListener("change", loadUI);
   </script>
